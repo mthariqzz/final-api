@@ -1,0 +1,209 @@
+<?php
+
+saya sudah membuat untuk register dan login di UserController
+p\Controllers\API;
+
+use App\Helpers\ResponseFormatter;
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Laravel\Fortify\Rules\Password;
+
+class UserController extends Controller
+{
+    public function fetch(Request $request)
+    {
+        return ResponseFormatter::success($request->user(), 'Data profile user berhasil diambil');
+    }
+
+    public function register(Request $request)
+    {
+        try {
+            $request->validate([
+                'username' => ['required', 'string', 'max:255', 'unique:users'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+                'password' => ['required', 'string', new Password],
+                'roles' => ['required', 'in:ibuhamil,kader,komunitas']
+            ]);
+
+            User::create([
+                'email' => $request->email,
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+                'roles' => $request->roles,
+            ]);
+
+            $user = User::where('email', $request->email)->first();
+
+            $tokenResult = $user->createToken('authToken')->plainTextToken;
+
+            return ResponseFormatter::success([
+                'access_token' => $tokenResult,
+                'token_type' => 'Bearer',
+                'user' => $user
+            ], 'User Registered');
+        } catch (Exception $error) {
+            Log::error('Registration error: ' . $error->getMessage() . ', Trace: ' . $error->getTraceAsString());
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error,
+            ], 'Authentication Failed', 500);
+        }
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'email|required',
+                'password' => 'required'
+            ]);
+
+            $credentials = request(['email', 'password']);
+            if (!Auth::attempt($credentials)) {
+                return ResponseFormatter::error([
+                    'message' => 'Unauthorized'
+                ], 'Authentication Failed', 500);
+            }
+
+            $user = User::where('email', $request->email)->first();
+            if (!Hash::check($request->password, $user->password, [])) {
+                throw new \Exception('Invalid Credentials');
+            }
+
+            $tokenResult = $user->createToken('authToken')->plainTextToken;
+            return ResponseFormatter::success([
+                'access_token' => $tokenResult,
+                'token_type' => 'Bearer',
+                'user' => $user
+            ], 'Authenticated');
+        } catch (Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $error,
+            ], 'Authentication Failed', 500);
+        }
+    }
+}
+tolong busatkan saya code HplHontroller, ProfileController, EducationController, PemeriksaanController
+
+hasil dari user
+Route::get('user', [UserController::class, 'fetch']);
+{
+  "
+  "users": [
+    {
+      "id": 1,
+      "email": "ibuhamil@example.com",
+      "email_verified_at": "2023-04-08 00:00:00",
+      "password": "hashed_password",
+      "remember_token": "token",
+      "current_team_id": 1,
+      "roles": "ibuhamil",
+      "username": "ibuhamil1",
+      "profile": {
+        "id": 1,
+        "user_id": 1,
+        "name": "Ibu Hamil 1",
+        "no_hp": "081234567890",
+        "kendaraan": "Sepeda Motor",
+        "golongan_darah": "A",
+        "alamat": "Jalan ABC No. 123",
+        "photo_url": "path/to/photo",
+        "pemeriksaan": [
+          {
+            "id": 1,
+            "profile_id": 1,
+            "tgl_pemeriksaan": "2023-04-01",
+            "tekanan_darah": "120/80",
+            "berat_badan": "60",
+            "lila": "30",
+            "tinggi_fundus": "15",
+            "detak_jantung_janin": "150",
+            "keluhan": "Pusing"
+          }
+          {
+            "id": 1,
+            "profile_id": 1,
+            "tgl_pemeriksaan": "2023-04-01",
+            "tekanan_darah": "120/80",
+            "berat_badan": "60",
+            "lila": "30",
+            "tinggi_fundus": "15",
+            "detak_jantung_janin": "150",
+            "keluhan": "Pusing"
+          }
+        ],
+        "hpl": {
+          "id": 1,
+          "profile_id": 1,
+          "tgl_hpl": "2023-10-01"
+        },
+        "educations": [
+          {
+            "id": 1,
+            "profile_id": 1,
+            "edukasi": "Pentingnya nutrisi selama kehamilan"
+          }
+        ]
+  }
+    },
+}
+hasil ProfileController
+""profile": {
+        "id": 1,
+        "user_id": 1,
+        "name": "Ibu Hamil 1",
+        "no_hp": "081234567890",
+        "kendaraan": "Sepeda Motor",
+        "golongan_darah": "A",
+        "alamat": "Jalan ABC No. 123",
+        "photo_url": "path/to/photo",
+
+hasil PemeriksaanController
+"pemeriksaan": [
+          {
+            "id": 1,
+            "profile_id": 1,
+            "tgl_pemeriksaan": "2023-04-01",
+            "tekanan_darah": "120/80",
+            "berat_badan": "60",
+            "lila": "30",
+            "tinggi_fundus": "15",
+            "detak_jantung_janin": "150",
+            "keluhan": "Pusing"
+          }
+          {
+            "id": 1,
+            "profile_id": 1,
+            "tgl_pemeriksaan": "2023-04-01",
+            "tekanan_darah": "120/80",
+            "berat_badan": "60",
+            "lila": "30",
+            "tinggi_fundus": "15",
+            "detak_jantung_janin": "150",
+            "keluhan": "Pusing"
+          }
+        ],
+
+hasil HplHontroller
+ "hpl": {
+          "id": 1,
+          "profile_id": 1,
+          "tgl_hpl": "2023-10-01"
+        },
+
+hasil dari EducationController
+"educations": [
+          {
+            "id": 1,
+            "profile_id": 1,
+            "edukasi": "Pentingnya nutrisi selama kehamilan"
+          }
+        ]
+
+}
